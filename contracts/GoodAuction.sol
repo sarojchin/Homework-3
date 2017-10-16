@@ -2,33 +2,38 @@ pragma solidity ^0.4.15;
 
 import "./AuctionInterface.sol";
 
-/** @title GoodAuction */
-contract GoodAuction is AuctionInterface {
-	/* New data structure, keeps track of refunds owed to ex-highest bidders */
-	mapping(address => uint) refunds;
-
-	/* Bid function, shifts to pull paradigm
-	 * Must return true on successful send and/or bid, bidder
-	 * reassignment
-	 * Must return false on failure and allow people to
-	 * retrieve their funds
+/** @title BadAuction */
+contract BadAuction is AuctionInterface {
+	/* Bid function, vulnerable to attack
+	 * Must return true on successful send and/or bid,
+	 * bidder reassignment
+	 * Must return false on failure and send people
+	 * their funds back
 	 */
-	function bid() payable external returns(bool) {
-		// YOUR CODE HERE
-	}
+	 
+	//modifier hasEnough() { require(msg.sender.send(msg.value)); _;}
+	function bid() payable external returns (bool) {
+			if (msg.value <= highestBid) {
+				if (!msg.sender.send(msg.value)) {
+					throw;
+				}
+			return false;
+		}
 
-	/* New withdraw function, shifts to pull paradigm */
-	function withdrawRefund() external returns(bool) {
-		// YOUR CODE HERE
-	}
+		if (!highestBidder.send(highestBid)) {
+			if (!msg.sender.send(msg.value)) {
+				throw;
+			}
+			return false;
+		}
 
-	/* Allow users to check the amount they can withdraw */
-	function getMyBalance() constant external returns(uint) {
-		return refunds[msg.sender];
+		highestBidder = msg.sender;
+		highestBid = msg.value;
+
 	}
 
 	/* Give people their funds back */
 	function () payable {
-		// YOUR CODE HERE
+		msg.sender.transfer(msg.value);
 	}
 }
